@@ -28,6 +28,16 @@ java {
 
 repositories {
     mavenCentral()
+    maven(url = "https://maven.pkg.github.com/aerulion/erenos/") {
+        name = "Erenos"
+        mavenContent {
+            releasesOnly()
+        }
+        credentials {
+            username = findProperty("gpr.erenos.user") as String? ?: System.getenv("GPR_ERENOS_USER")
+            password = findProperty("gpr.erenos.key") as String? ?: System.getenv("GPR_ERENOS_KEY")
+        }
+    }
 }
 
 spotless {
@@ -85,6 +95,9 @@ kotlin {
 
         named("jvmMain") {
             dependencies {
+                implementation(libs.erenos)
+                implementation(libs.fastutil)
+
                 implementation(libs.bundles.ktor.server)
                 implementation(libs.bundles.ktor.client)
                 implementation(libs.ktor.network)
@@ -130,23 +143,23 @@ jib {
     }
     container {
         mainClass = entryPoint
-        labels.put(
-            "org.opencontainers.image.description",
-            indraGit.commit().map { it.name }.orElse("<unknown>").map { commit ->
-                """A Web UI for working with Adventure components.
-            Built with Adventure ${libs.versions.adventure.get()}, from webui commit $commit"""
-            },
-        )
+//        labels.put(
+//            "org.opencontainers.image.description",
+//            indraGit.commit().map { it.name }.orElse("<unknown>").map { commit ->
+//                """A Web UI for working with Adventure components.
+//            Built with Adventure ${libs.versions.adventure.get()}, from webui commit $commit"""
+//            },
+//        )
         jvmFlags = listOf("--enable-native-access=ALL-UNNAMED")
     }
     to {
-        image = "ghcr.io/papermc/adventure-webui/webui"
+        image = "corpium.local/adventure-webui"
         tags =
             setOf(
                 "latest",
-                "${indraGit.branchName().getOrElse(
-                    "nogit",
-                ).replace("/", "_")}-${indraGit.commit().orNull?.name()?.take(7)}-${Instant.now().epochSecond}",
+//                "${indraGit.branchName().getOrElse(
+//                    "nogit",
+//                ).replace("/", "_")}-${indraGit.commit().orNull?.name()?.take(7)}-${Instant.now().epochSecond}",
             )
     }
 }

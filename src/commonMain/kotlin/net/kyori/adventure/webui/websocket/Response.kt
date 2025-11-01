@@ -13,5 +13,7 @@ public data class ParseResult(
     /** The result of the conversion, only if it was a [success]. */
     public val dom: String? = null,
     /** The error message, if it wasn't a [success]. */
-    public val errorMessage: String? = null
+    public val errorMessage: String? = null,
+    /** The id of the target HTML element */
+    public val id: String? = null
 )

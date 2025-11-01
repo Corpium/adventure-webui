@@ -1,0 +1,6 @@
+services:
+  adventure-webui:
+    image: 'corpium.local/adventure-webui:latest' # image should be built via `./gradlew jibDockerBuild`
+    ports:
+      - "4000:8080"
+    restart: always

@@ -78,14 +78,12 @@ public fun installHoverManager() {
 
 private fun checkHoverEvents(target: EventTarget?, hoverTooltip: HTMLDivElement) {
     if (target is HTMLSpanElement && target.classList.contains(COMPONENT_CLASS)) {
-        if (EventType.HOVER.isUsable(currentMode)) {
-            val showTextHover = target.dataset[DATA_HOVER_EVENT_SHOW_TEXT.camel]
-            if (showTextHover != null) {
-                hoverTooltip.hidden = false
-                hoverTooltip.innerHTML = showTextHover
-                // No further bubbling required
-                return
-            }
+        val showTextHover = target.dataset[DATA_HOVER_EVENT_SHOW_TEXT.camel]
+        if (showTextHover != null) {
+            hoverTooltip.hidden = false
+            hoverTooltip.innerHTML = showTextHover
+            // No further bubbling required
+            return
         }
         checkHoverEvents(target.parentElement, hoverTooltip)
     }

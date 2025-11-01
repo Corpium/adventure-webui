@@ -6,7 +6,6 @@ import io.ktor.server.http.content.defaultResource
 import io.ktor.server.http.content.resource
 import io.ktor.server.http.content.resources
 import io.ktor.server.http.content.static
-import io.ktor.server.http.content.staticResources
 import io.ktor.server.request.receiveText
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
@@ -16,7 +15,7 @@ import io.ktor.server.routing.routing
 import io.ktor.server.websocket.webSocket
 import io.ktor.websocket.Frame
 import io.ktor.websocket.readText
-import kotlinx.serialization.encodeToString
+import net.aerulion.erenos.utils.component.ComponentUtils
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
@@ -25,6 +24,7 @@ import net.kyori.adventure.webui.BuildInfo
 import net.kyori.adventure.webui.Serializers
 import net.kyori.adventure.webui.URL_API
 import net.kyori.adventure.webui.URL_BUILD_INFO
+import net.kyori.adventure.webui.URL_CORP_MINI_TO_HTML
 import net.kyori.adventure.webui.URL_EDITOR
 import net.kyori.adventure.webui.URL_IN_GAME_PREVIEW
 import net.kyori.adventure.webui.URL_MINI_SHORTEN
@@ -40,6 +40,7 @@ import net.kyori.adventure.webui.jvm.minimessage.hook.FONT_RENDER_HOOK
 import net.kyori.adventure.webui.jvm.minimessage.hook.HOVER_EVENT_RENDER_HOOK
 import net.kyori.adventure.webui.jvm.minimessage.hook.HookManager
 import net.kyori.adventure.webui.jvm.minimessage.hook.INSERTION_RENDER_HOOK
+import net.kyori.adventure.webui.jvm.minimessage.hook.SHADOW_COLOR_RENDER_HOOK
 import net.kyori.adventure.webui.jvm.minimessage.hook.TEXT_COLOR_RENDER_HOOK
 import net.kyori.adventure.webui.jvm.minimessage.hook.TEXT_DECORATION_RENDER_HOOK
 import net.kyori.adventure.webui.jvm.minimessage.hook.TEXT_RENDER_HOOK
@@ -54,7 +55,6 @@ import net.kyori.adventure.webui.websocket.ParseResult
 import net.kyori.adventure.webui.websocket.Placeholders
 import net.kyori.adventure.webui.websocket.Response
 import java.time.Instant
-import net.kyori.adventure.webui.jvm.minimessage.hook.SHADOW_COLOR_RENDER_HOOK
 
 private val startedAt = Instant.now()
 
@@ -113,6 +113,45 @@ public fun Application.miniMessage() {
 
         // set up other routing
         route(URL_API) {
+            webSocket(URL_CORP_MINI_TO_HTML) {
+                var miniMessage: String?
+                var id: String?
+
+                for (frame in incoming) {
+                    if (frame is Frame.Text) {
+                        when (val packet = Serializers.json.tryDecodeFromString<Packet>(frame.readText())) {
+                            is Call -> {
+                                miniMessage = packet.miniMessage
+                                id = packet.id
+                            }
+                            is Placeholders -> continue
+                            null -> continue
+						}
+
+                        if (miniMessage == null) continue
+                        val response =
+                            try {
+                                val result = StringBuilder()
+                                val component = ComponentUtils.parseLegacyColorAndMiniMessage(HookManager.render(miniMessage))
+                                result.appendComponent(HookManager.render(component))
+                                Response(
+                                    ParseResult(
+                                        success = true,
+                                        dom = result.toString(),
+                                        id = id
+                                    )
+                                )
+                            } catch (e: Exception) {
+                                Response(
+                                    ParseResult(
+                                        false, errorMessage = e.message ?: "Unknown error!", id = id
+                                    )
+                                )
+                            }
+                        outgoing.send(Frame.Text(Serializers.json.encodeToString(response)))
+                    }
+                }
+            }
             webSocket(URL_MINI_TO_HTML) {
                 var tagResolver = TagResolver.empty()
                 var miniMessage: String? = null
@@ -148,7 +187,7 @@ public fun Application.miniMessage() {
                                             result.append("\n")
                                         }
                                 } else {
-                                    val component = MiniMessage.miniMessage().deserialize(HookManager.render(miniMessage), tagResolver)
+                                    val component = ComponentUtils.parseLegacyColorAndMiniMessage(HookManager.render(miniMessage))
                                     result.appendComponent(HookManager.render(component))
                                 }
 

@@ -11,7 +11,8 @@ public sealed interface Packet
 @SerialName("call")
 public data class Call(
     public val miniMessage: String? = null,
-    public val isolateNewlines: Boolean = false
+    public val isolateNewlines: Boolean = false,
+    public val id: String? = null,
 ) : Packet
 
 @Serializable

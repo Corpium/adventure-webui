@@ -28,6 +28,11 @@ ktor-server-compression = { group = "io.ktor", name = "ktor-server-compression",
 ktor-network = { group = "io.ktor", name = "ktor-network", version.ref = "ktor" }
 logback-classic = { group = "ch.qos.logback", name = "logback-classic", version = "1.5.28" }
 
+# required dependencies for erenos support
+erenos = { group = "net.aerulion", name = "erenos", version = "3.15.1" }
+# fastutil is a transitive dependency of io.papermc.paper:paper-api and is used in ErenosBasicColor
+fastutil = {group = "it.unimi.dsi", name = "fastutil", version = "8.5.15" }
+
 zKtlint = { group = "com.pinterest.ktlint", name = "ktlint-cli", version.ref = "ktlint"}
 
 [bundles]
